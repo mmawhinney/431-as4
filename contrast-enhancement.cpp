@@ -17,6 +17,10 @@ PGM_IMG contrast_enhancement_g(PGM_IMG img_in)
     return result;
 }
 
+PGM_IMG contrast_enhancement_g_gpu(PGM_IMG img_in) {
+	return img_in;
+}
+
 PPM_IMG contrast_enhancement_c_rgb(PPM_IMG img_in)
 {
     PPM_IMG result;
@@ -64,6 +68,10 @@ PPM_IMG contrast_enhancement_c_yuv(PPM_IMG img_in)
     return result;
 }
 
+PPM_IMG contrast_enhancement_g_yuv(PPM_IMG img_in) {
+	return img_in;
+}
+
 PPM_IMG contrast_enhancement_c_hsl(PPM_IMG img_in)
 {
     HSL_IMG hsl_med;
@@ -86,6 +94,10 @@ PPM_IMG contrast_enhancement_c_hsl(PPM_IMG img_in)
     free(hsl_med.s);
     free(hsl_med.l);
     return result;
+}
+
+PPM_IMG contrast_enhancement_g_hsl(PPM_IMG img_in) {
+	return img_in;
 }
 
 
