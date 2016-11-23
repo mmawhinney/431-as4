@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <cuda_runtime.h>
 #include "hist-equ.h"
+#include "histogram-equalization.h"
 
 PGM_IMG contrast_enhancement_g(PGM_IMG img_in)
 {
@@ -97,8 +98,26 @@ PPM_IMG contrast_enhancement_c_hsl(PPM_IMG img_in)
     return result;
 }
 
-PPM_IMG contrast_enhancement_g_hsl(PPM_IMG img_in) {
-	return img_in;
+PPM_IMG contrast_enhancement_c_hsl_gpu(PPM_IMG img_in) {
+    HSL_IMG hsl_med;
+    PPM_IMG result;
+    
+    unsigned char * l_equ;
+    int hist[256];
+
+    hsl_med = rgb2hsl(img_in);
+    l_equ = (unsigned char *)malloc(hsl_med.height*hsl_med.width*sizeof(unsigned char));
+
+    create_histogram_gpu(hist, hsl_med.l, hsl_med.height * hsl_med.width, 256, l_equ);
+    
+    free(hsl_med.l);
+    hsl_med.l = l_equ;
+
+    result = hsl2rgb(hsl_med);
+    free(hsl_med.h);
+    free(hsl_med.s);
+    free(hsl_med.l);
+    return result;
 }
 
 

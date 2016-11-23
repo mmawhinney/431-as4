@@ -30,7 +30,7 @@ int main(){
     printf("Running contrast enhancement for color images.\n");
     img_ibuf_c = read_ppm("in.ppm");
     run_cpu_color_test(img_ibuf_c);
-    // run_gpu_color_test(img_ibuf_c);
+    run_gpu_color_test(img_ibuf_c);
     free_ppm(img_ibuf_c);
     
     return 0;
@@ -46,24 +46,24 @@ void run_gpu_color_test(PPM_IMG img_in)
 	sdkCreateTimer(&timer);
 	sdkStartTimer(&timer);
 	// call hsl enhancement function
+    contrast_enhancement_c_hsl_gpu(img_in);
 	sdkStopTimer(&timer);
 	printf("HSL processing time: %f (ms)\n", sdkGetTimerValue(&timer));
 	sdkDeleteTimer(&timer);
 	
 	write_ppm(img_hsl, "out_hsl_gpu.ppm");
 	
-	sdkCreateTimer(&timer);
-	sdkStartTimer(&timer);
+	// sdkCreateTimer(&timer);
+	// sdkStartTimer(&timer);
 	// call yuv enhancement function
-	sdkStopTimer(&timer);
-	printf("YUV processing time: %f (ms)\n", sdkGetTimerValue(&timer));
-	sdkDeleteTimer(&timer);
+	// sdkStopTimer(&timer);
+	// printf("YUV processing time: %f (ms)\n", sdkGetTimerValue(&timer));
+	// sdkDeleteTimer(&timer);
 	
-	write_ppm(img_yuv, "out_yuv_gpu.ppm");
+	// write_ppm(img_yuv, "out_yuv_gpu.ppm");
 	free_ppm(img_hsl);
-	free_ppm(img_yuv);
+	// free_ppm(img_yuv);
 
-    img_in = img_in; // To avoid warning...
 }
 
 void run_gpu_gray_test(PGM_IMG img_in)
