@@ -3,14 +3,20 @@
 #include <stdlib.h>
 #include "histogram-equalization.h"
 
+void print_hist(int *hist) {
+    for(int i = 0; i < 256; i++) {
+        printf("hist[%d] = %d\n", i, hist[i]);
+    }
+}
 
-void histogram_gpu(int * hist_out, unsigned char * img_in, int img_size, int nbr_bin){
+__global__ void histogram_gpu(int * hist_out, unsigned char * img_in, int *img_size, int *nbr_bin){
+    printf("executed...\n");
     int i;
-    for ( i = 0; i < nbr_bin; i ++){
+    for ( i = 0; i < *nbr_bin; i ++){
         hist_out[i] = 0;
     }
 
-    for ( i = 0; i < img_size; i ++){
+    for ( i = 0; i < *img_size; i ++){
         hist_out[img_in[i]] ++;
     }
 }
@@ -71,19 +77,29 @@ void create_histogram_gpu(int *hist, unsigned char* img_in, int img_size, int nb
 
     printf("%s\n", cudaGetErrorString(cudaGetLastError()));
 
-    histogram_gpu<<<1,1>>>(hist, img_in, img_size, nbr_bin);
+    histogram_gpu<<<1,1>>>(hist_d, img_in_d, img_size_d, nbr_bin_d);
 
     printf("%s\n", cudaGetErrorString(cudaGetLastError()));
 
-    cudaMemcpy(&hist, hist_d, sizeof(int)*256, cudaMemcpyDeviceToHost);
+
+    cudaMemcpy(hist, hist_d, sizeof(int)*256, cudaMemcpyDeviceToHost);
+
+    print_hist(hist);
+
+    printf("%s\n", cudaGetErrorString(cudaGetLastError()));
+
     cudaFree(hist_d);
     cudaFree(img_in_d);
     cudaFree(img_size_d);
     cudaFree(nbr_bin_d);
 
-    histogram_equalization_gpu(img_out, img_in, hist, img_size, nbr_bin);
+    printf("%s\n", cudaGetErrorString(cudaGetLastError()));
 
+
+    histogram_equalization_gpu(img_out, img_in, hist, img_size, nbr_bin);
 }
+
+
 
 
 
