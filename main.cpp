@@ -24,7 +24,7 @@ int main(){
     printf("Running contrast enhancement for gray-scale images.\n");
     img_ibuf_g = read_pgm("in.pgm");
     run_cpu_gray_test(img_ibuf_g);
-    // run_gpu_gray_test(img_ibuf_g);
+    run_gpu_gray_test(img_ibuf_g);
     free_pgm(img_ibuf_g);
     
     printf("Running contrast enhancement for color images.\n");
@@ -75,15 +75,13 @@ void run_gpu_gray_test(PGM_IMG img_in)
     
 	sdkCreateTimer(&timer);
 	sdkStartTimer(&timer);
-	// Call contrast enhancement function for greyscale
+    img = contrast_enhancement_g_gpu(img_in);
 	sdkStopTimer(&timer);
-	printf("Greyscale processing time: %f (ms)\n", sdkGetTimerValue(&timer));
+	printf("GPU processing time: %f (ms)\n", sdkGetTimerValue(&timer));
 	sdkDeleteTimer(&timer);
 	
 	write_pgm(img, "out_gpu.pgm");
 	free_pgm(img);
-	
-    img_in = img_in; // To avoid warning...
 }
 
 void run_cpu_color_test(PPM_IMG img_in)
