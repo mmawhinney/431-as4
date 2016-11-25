@@ -36,7 +36,6 @@ __global__ void histogram_equalization_gpu(unsigned char *img_out, unsigned char
 
     __syncthreads();
 
-    
     int offset = blockDim.x * gridDim.x;
     while(i < *img_size) {
         if(lut[img_in[i]] > 255) {
@@ -46,7 +45,6 @@ __global__ void histogram_equalization_gpu(unsigned char *img_out, unsigned char
         }
         i += offset;
     }
-
 }
 
 void create_histogram_gpu(int *hist, unsigned char* img_in, int img_size, int nbr_bin, 
@@ -74,8 +72,6 @@ void create_histogram_gpu(int *hist, unsigned char* img_in, int img_size, int nb
     histogram_gpu<<<blocks * 2 ,nbr_bin, nbr_bin * sizeof(int)>>>(hist_d, img_in_d, img_size_d);
 
     cudaMemcpy(hist, hist_d, sizeof(int)*256, cudaMemcpyDeviceToHost);
-
-    printf("%s\n", cudaGetErrorString(cudaGetLastError()));
 
     int *size_minus_min_d;
     int *min_d;

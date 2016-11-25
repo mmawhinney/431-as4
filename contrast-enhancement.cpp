@@ -4,6 +4,7 @@
 #include <cuda_runtime.h>
 #include "hist-equ.h"
 #include "histogram-equalization.h"
+#include "contrast-enhancement-cuda.h"
 
 PGM_IMG contrast_enhancement_g(PGM_IMG img_in)
 {
@@ -91,7 +92,7 @@ PPM_IMG contrast_enhancement_c_yuv_gpu(PPM_IMG img_in) {
     // histogram(hist, yuv_med.img_y, yuv_med.h * yuv_med.w, 256);
     // histogram_equalization(y_equ,yuv_med.img_y,hist,yuv_med.h * yuv_med.w, 256);
     create_histogram_gpu(hist, yuv_med.img_y, yuv_med.h * yuv_med.w, 256, y_equ);
-    
+
     free(yuv_med.img_y);
     yuv_med.img_y = y_equ;
     
@@ -134,14 +135,20 @@ PPM_IMG contrast_enhancement_c_hsl_gpu(PPM_IMG img_in) {
     unsigned char * l_equ;
     int hist[256];
 
-    hsl_med = rgb2hsl(img_in);
+    // hsl_med = rgb2hsl(img_in);
+    hsl_med = rgb2hsl_gpu(img_in);
     l_equ = (unsigned char *)malloc(hsl_med.height*hsl_med.width*sizeof(unsigned char));
+    printf("%d, %d\n", hsl_med.height, hsl_med.width);
+    // for(int i = 0; i < hsl_med.height * hsl_med.width; i++) {
+    //     printf("testing...\n");
+    //     printf("hsl.l[%d] = %d\n", i, hsl_med.l[i]);
+    // }
 
     create_histogram_gpu(hist, hsl_med.l, hsl_med.height * hsl_med.width, 256, l_equ);
-    
+     
     free(hsl_med.l);
+    
     hsl_med.l = l_equ;
-
     result = hsl2rgb(hsl_med);
     free(hsl_med.h);
     free(hsl_med.s);
@@ -212,6 +219,7 @@ HSL_IMG rgb2hsl(PPM_IMG img_in)
         img_out.h[i] = H;
         img_out.s[i] = S;
         img_out.l[i] = (unsigned char)(L*255);
+        // printf("L = %d\n", (unsigned char)(L*255));
     }
     
     return img_out;
