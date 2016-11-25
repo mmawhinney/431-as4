@@ -46,24 +46,24 @@ void run_gpu_color_test(PPM_IMG img_in)
 	sdkCreateTimer(&timer);
 	sdkStartTimer(&timer);
 	// call hsl enhancement function
-    contrast_enhancement_c_hsl_gpu(img_in);
+    img_hsl = contrast_enhancement_c_hsl_gpu(img_in);
 	sdkStopTimer(&timer);
 	printf("HSL processing time: %f (ms)\n", sdkGetTimerValue(&timer));
 	sdkDeleteTimer(&timer);
 	
 	write_ppm(img_hsl, "out_hsl_gpu.ppm");
 	
-	// sdkCreateTimer(&timer);
-	// sdkStartTimer(&timer);
-	// call yuv enhancement function
-	// sdkStopTimer(&timer);
-	// printf("YUV processing time: %f (ms)\n", sdkGetTimerValue(&timer));
-	// sdkDeleteTimer(&timer);
+	sdkCreateTimer(&timer);
+	sdkStartTimer(&timer);
+    img_yuv = contrast_enhancement_c_yuv_gpu(img_in);
+	sdkStopTimer(&timer);
+	printf("YUV processing time: %f (ms)\n", sdkGetTimerValue(&timer));
+	sdkDeleteTimer(&timer);
 	
-	// write_ppm(img_yuv, "out_yuv_gpu.ppm");
-	free_ppm(img_hsl);
-	// free_ppm(img_yuv);
+	write_ppm(img_yuv, "out_yuv_gpu.ppm");
 
+	free_ppm(img_hsl);
+	free_ppm(img_yuv);
 }
 
 void run_gpu_gray_test(PGM_IMG img_in)
@@ -112,9 +112,6 @@ void run_cpu_color_test(PPM_IMG img_in)
     free_ppm(img_obuf_hsl);
     free_ppm(img_obuf_yuv);
 }
-
-
-
 
 void run_cpu_gray_test(PGM_IMG img_in)
 {

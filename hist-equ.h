@@ -64,7 +64,9 @@ PPM_IMG contrast_enhancement_c_yuv(PPM_IMG img_in);
 PPM_IMG contrast_enhancement_c_hsl(PPM_IMG img_in);
 
 PPM_IMG contrast_enhancement_c_hsl_gpu(PPM_IMG img_in);
+PPM_IMG contrast_enhancement_c_yuv_gpu(PPM_IMG img_in);
 PGM_IMG contrast_enhancement_g_gpu(PGM_IMG img_in);
+
 
 
 #endif
