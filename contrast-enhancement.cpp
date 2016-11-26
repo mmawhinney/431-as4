@@ -86,17 +86,15 @@ PPM_IMG contrast_enhancement_c_yuv_gpu(PPM_IMG img_in) {
     unsigned char * y_equ;
     int hist[256];
     
-    yuv_med = rgb2yuv(img_in);
+    yuv_med = rgb2yuv_gpu(img_in);
     y_equ = (unsigned char *)malloc(yuv_med.h*yuv_med.w*sizeof(unsigned char));
     
-    // histogram(hist, yuv_med.img_y, yuv_med.h * yuv_med.w, 256);
-    // histogram_equalization(y_equ,yuv_med.img_y,hist,yuv_med.h * yuv_med.w, 256);
     create_histogram_gpu(hist, yuv_med.img_y, yuv_med.h * yuv_med.w, 256, y_equ);
 
     free(yuv_med.img_y);
     yuv_med.img_y = y_equ;
     
-    result = yuv2rgb(yuv_med);
+    result = yuv2rgb_gpu(yuv_med);
     free(yuv_med.img_y);
     free(yuv_med.img_u);
     free(yuv_med.img_v);

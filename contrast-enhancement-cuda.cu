@@ -278,3 +278,238 @@ PPM_IMG hsl2rgb_gpu(HSL_IMG img_in)
 
     return img_out;
 }
+
+
+//Convert RGB to YUV, all components in [0, 255]
+__global__ void rgb2yuv_convert(PPM_IMG *img_in, YUV_IMG *img_out, int *img_size)
+{
+    unsigned char r, g, b;
+    unsigned char y, cb, cr;
+
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int offset = blockDim.x * gridDim.x;
+
+    while(i < *img_size) {
+        r = img_in->img_r[i];
+        g = img_in->img_g[i];
+        b = img_in->img_b[i];
+        
+        y  = (unsigned char)( 0.299*r + 0.587*g +  0.114*b);
+        cb = (unsigned char)(-0.169*r - 0.331*g +  0.499*b + 128);
+        cr = (unsigned char)( 0.499*r - 0.418*g - 0.0813*b + 128);
+        
+        __syncthreads();
+
+        img_out->img_y[i] = y;
+        img_out->img_u[i] = cb;
+        img_out->img_v[i] = cr;
+        
+        i += offset;
+    }
+}
+
+//Convert RGB to YUV, all components in [0, 255]
+YUV_IMG rgb2yuv_gpu(PPM_IMG img_in)
+{
+    YUV_IMG img_out;
+    int img_size = img_in.w * img_in.h;
+    
+    img_out.w = img_in.w;
+    img_out.h = img_in.h;
+    img_out.img_y = (unsigned char *)malloc(sizeof(unsigned char) * img_size);
+    img_out.img_u = (unsigned char *)malloc(sizeof(unsigned char) * img_size);
+    img_out.img_v = (unsigned char *)malloc(sizeof(unsigned char) * img_size);
+
+    unsigned char *img_y = (unsigned char *)malloc(img_size * sizeof(unsigned char));
+    unsigned char *img_u = (unsigned char *)malloc(img_size * sizeof(unsigned char));
+    unsigned char *img_v = (unsigned char *)malloc(img_size * sizeof(unsigned char));
+
+    unsigned char *img_r = (unsigned char *)malloc(img_size * sizeof(unsigned char));
+    unsigned char *img_g = (unsigned char *)malloc(img_size * sizeof(unsigned char));
+    unsigned char *img_b = (unsigned char *)malloc(img_size * sizeof(unsigned char));
+    
+    PPM_IMG *img_in_d;
+    YUV_IMG *img_out_d;
+    int *img_size_d;
+    
+    cudaMalloc((void**)&img_out_d, sizeof(YUV_IMG));
+    cudaMalloc((void**)&img_y, sizeof(unsigned char) * img_size);
+    cudaMalloc((void**)&img_u, sizeof(unsigned char) * img_size);
+    cudaMalloc((void**)&img_v, sizeof(unsigned char) * img_size);
+    
+
+    cudaMalloc((void**)&img_in_d, sizeof(PPM_IMG));
+    cudaMalloc((void**)&img_r, sizeof(unsigned char) * img_size);
+    cudaMalloc((void**)&img_g, sizeof(unsigned char) * img_size);
+    cudaMalloc((void**)&img_b, sizeof(unsigned char) * img_size);
+
+
+
+    cudaMemcpy(img_out_d, &img_out, sizeof(YUV_IMG), cudaMemcpyHostToDevice);
+    cudaMemcpy(img_y, img_out.img_y, sizeof(unsigned char) *img_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(img_u, img_out.img_u, sizeof(unsigned char) *img_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(img_v, img_out.img_v, sizeof(unsigned char) *img_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(&(img_out_d->img_y), &img_y, sizeof(img_y), cudaMemcpyHostToDevice);
+    cudaMemcpy(&(img_out_d->img_u), &img_u, sizeof(img_u), cudaMemcpyHostToDevice);
+    cudaMemcpy(&(img_out_d->img_v), &img_v, sizeof(img_v), cudaMemcpyHostToDevice);
+
+
+    cudaMemcpy(img_in_d, &img_in, sizeof(PPM_IMG), cudaMemcpyHostToDevice);
+    cudaMemcpy(img_r, img_in.img_r, sizeof(unsigned char) * img_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(img_g, img_in.img_g, sizeof(unsigned char) * img_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(img_b, img_in.img_b, sizeof(unsigned char) * img_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(&(img_in_d->img_r), &img_r, sizeof(img_r), cudaMemcpyHostToDevice);
+    cudaMemcpy(&(img_in_d->img_g), &img_g, sizeof(img_g), cudaMemcpyHostToDevice);
+    cudaMemcpy(&(img_in_d->img_b), &img_b, sizeof(img_b), cudaMemcpyHostToDevice);
+    
+
+
+    cudaMalloc((void**)&img_size_d, sizeof(int));
+    cudaMemcpy(img_size_d, &img_size, sizeof(int), cudaMemcpyHostToDevice);
+    
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, 0);
+    int blocks = prop.multiProcessorCount;
+
+    rgb2yuv_convert<<<blocks * 2, 1024>>>(img_in_d, img_out_d, img_size_d);
+    
+    cudaMemcpy(img_out.img_y, img_y, sizeof(unsigned char) * img_size, cudaMemcpyDeviceToHost);
+    cudaMemcpy(img_out.img_u, img_u, sizeof(unsigned char) * img_size, cudaMemcpyDeviceToHost);
+    cudaMemcpy(img_out.img_v, img_v, sizeof(unsigned char) * img_size, cudaMemcpyDeviceToHost);
+
+
+    cudaFree(img_in_d);
+    cudaFree(img_r);
+    cudaFree(img_g);
+    cudaFree(img_b);
+    cudaFree(img_out_d);
+    cudaFree(img_y);
+    cudaFree(img_u);
+    cudaFree(img_v);
+    cudaFree(img_size_d);
+
+
+    return img_out;
+}
+
+
+__device__ unsigned char clip_rgb_gpu(int x)
+{
+    if(x > 255)
+        return 255;
+    if(x < 0)
+        return 0;
+
+    return (unsigned char)x;
+}
+
+//Convert YUV to RGB, all components in [0, 255]
+__global__ void yuv2rgb_convert(YUV_IMG *img_in, PPM_IMG *img_out, int *img_size)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int offset = blockDim.x * gridDim.x;
+
+    int  rt,gt,bt;
+    int y, cb, cr;
+
+    while(i < *img_size){
+        y  = (int)img_in->img_y[i];
+        cb = (int)img_in->img_u[i] - 128;
+        cr = (int)img_in->img_v[i] - 128;
+        
+        rt  = (int)( y + 1.402*cr);
+        gt  = (int)( y - 0.344*cb - 0.714*cr);
+        bt  = (int)( y + 1.772*cb);
+
+        __syncthreads();
+
+        img_out->img_r[i] = clip_rgb_gpu(rt);
+        img_out->img_g[i] = clip_rgb_gpu(gt);
+        img_out->img_b[i] = clip_rgb_gpu(bt);
+
+        i += offset;
+    }
+}
+
+//Convert RGB to YUV, all components in [0, 255]
+PPM_IMG yuv2rgb_gpu(YUV_IMG img_in)
+{
+    PPM_IMG img_out;
+    int img_size = img_in.w * img_in.h;
+    
+    img_out.w = img_in.w;
+    img_out.h = img_in.h;
+    img_out.img_r = (unsigned char *)malloc(sizeof(unsigned char) * img_size);
+    img_out.img_g = (unsigned char *)malloc(sizeof(unsigned char) * img_size);
+    img_out.img_b = (unsigned char *)malloc(sizeof(unsigned char) * img_size);
+
+    unsigned char *img_y = (unsigned char *)malloc(img_size * sizeof(unsigned char));
+    unsigned char *img_u = (unsigned char *)malloc(img_size * sizeof(unsigned char));
+    unsigned char *img_v = (unsigned char *)malloc(img_size * sizeof(unsigned char));
+
+    unsigned char *img_r = (unsigned char *)malloc(img_size * sizeof(unsigned char));
+    unsigned char *img_g = (unsigned char *)malloc(img_size * sizeof(unsigned char));
+    unsigned char *img_b = (unsigned char *)malloc(img_size * sizeof(unsigned char));
+    
+    YUV_IMG *img_in_d;
+    PPM_IMG *img_out_d;
+    int *img_size_d;
+    
+    cudaMalloc((void**)&img_out_d, sizeof(PPM_IMG));
+    cudaMalloc((void**)&img_r, sizeof(unsigned char) * img_size);
+    cudaMalloc((void**)&img_g, sizeof(unsigned char) * img_size);
+    cudaMalloc((void**)&img_b, sizeof(unsigned char) * img_size);
+    
+    cudaMalloc((void**)&img_in_d, sizeof(YUV_IMG));
+    cudaMalloc((void**)&img_y, sizeof(unsigned char) * img_size);
+    cudaMalloc((void**)&img_u, sizeof(unsigned char) * img_size);
+    cudaMalloc((void**)&img_v, sizeof(unsigned char) * img_size);
+
+
+    cudaMemcpy(img_out_d, &img_out, sizeof(PPM_IMG), cudaMemcpyHostToDevice);
+    cudaMemcpy(img_r, img_out.img_r, sizeof(unsigned char) * img_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(img_g, img_out.img_g, sizeof(unsigned char) * img_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(img_b, img_out.img_b, sizeof(unsigned char) * img_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(&(img_out_d->img_r), &img_r, sizeof(img_r), cudaMemcpyHostToDevice);
+    cudaMemcpy(&(img_out_d->img_g), &img_g, sizeof(img_g), cudaMemcpyHostToDevice);
+    cudaMemcpy(&(img_out_d->img_b), &img_b, sizeof(img_b), cudaMemcpyHostToDevice);
+    
+
+
+    cudaMemcpy(img_in_d, &img_in, sizeof(YUV_IMG), cudaMemcpyHostToDevice);
+    cudaMemcpy(img_y, img_in.img_y, sizeof(unsigned char) *img_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(img_u, img_in.img_u, sizeof(unsigned char) *img_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(img_v, img_in.img_v, sizeof(unsigned char) *img_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(&(img_in_d->img_y), &img_y, sizeof(img_y), cudaMemcpyHostToDevice);
+    cudaMemcpy(&(img_in_d->img_u), &img_u, sizeof(img_u), cudaMemcpyHostToDevice);
+    cudaMemcpy(&(img_in_d->img_v), &img_v, sizeof(img_v), cudaMemcpyHostToDevice);
+    
+
+
+    cudaMalloc((void**)&img_size_d, sizeof(int));
+    cudaMemcpy(img_size_d, &img_size, sizeof(int), cudaMemcpyHostToDevice);
+    
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, 0);
+    int blocks = prop.multiProcessorCount;
+
+    yuv2rgb_convert<<<blocks * 2, 1024>>>(img_in_d, img_out_d, img_size_d);
+    
+    cudaMemcpy(img_out.img_r, img_r, sizeof(unsigned char) * img_size, cudaMemcpyDeviceToHost);
+    cudaMemcpy(img_out.img_g, img_g, sizeof(unsigned char) * img_size, cudaMemcpyDeviceToHost);
+    cudaMemcpy(img_out.img_b, img_b, sizeof(unsigned char) * img_size, cudaMemcpyDeviceToHost);
+
+
+    cudaFree(img_in_d);
+    cudaFree(img_r);
+    cudaFree(img_g);
+    cudaFree(img_b);
+    cudaFree(img_out_d);
+    cudaFree(img_y);
+    cudaFree(img_u);
+    cudaFree(img_v);
+    cudaFree(img_size_d);
+
+
+    return img_out;
+}
