@@ -138,12 +138,7 @@ PPM_IMG contrast_enhancement_c_hsl_gpu(PPM_IMG img_in) {
     // hsl_med = rgb2hsl(img_in);
     hsl_med = rgb2hsl_gpu(img_in);
     l_equ = (unsigned char *)malloc(hsl_med.height*hsl_med.width*sizeof(unsigned char));
-    printf("%d, %d\n", hsl_med.height, hsl_med.width);
-    // for(int i = 0; i < hsl_med.height * hsl_med.width; i++) {
-    //     printf("testing...\n");
-    //     printf("hsl.l[%d] = %d\n", i, hsl_med.l[i]);
-    // }
-
+   
     create_histogram_gpu(hist, hsl_med.l, hsl_med.height * hsl_med.width, 256, l_equ);
      
     free(hsl_med.l);
@@ -219,9 +214,15 @@ HSL_IMG rgb2hsl(PPM_IMG img_in)
         img_out.h[i] = H;
         img_out.s[i] = S;
         img_out.l[i] = (unsigned char)(L*255);
-        // printf("L = %d\n", (unsigned char)(L*255));
     }
     
+    // for(int i = 0; i < img_in.w * img_in.h; i++) {
+    //     printf("i = %d, img_out.h = %f, img_out.s = %f, img_out.l = %d\n", i, img_out.h[i], img_out.s[i], img_out.l[i]);
+    //     if(img_out.s[i] >= 1.0) {
+    //         printf("S too big in original...\n");
+    //     }
+    // }
+
     return img_out;
 }
 
