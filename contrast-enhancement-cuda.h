@@ -2,5 +2,6 @@
 #define _CONTRAST_ENHANCEMENT_CUDA_H_
 
 HSL_IMG rgb2hsl_gpu(PPM_IMG img_in);
+PPM_IMG hsl2rgb_gpu(HSL_IMG img_in);
 
 #endif

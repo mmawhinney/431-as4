@@ -135,7 +135,6 @@ PPM_IMG contrast_enhancement_c_hsl_gpu(PPM_IMG img_in) {
     unsigned char * l_equ;
     int hist[256];
 
-    // hsl_med = rgb2hsl(img_in);
     hsl_med = rgb2hsl_gpu(img_in);
     l_equ = (unsigned char *)malloc(hsl_med.height*hsl_med.width*sizeof(unsigned char));
    
@@ -144,7 +143,7 @@ PPM_IMG contrast_enhancement_c_hsl_gpu(PPM_IMG img_in) {
     free(hsl_med.l);
     
     hsl_med.l = l_equ;
-    result = hsl2rgb(hsl_med);
+    result = hsl2rgb_gpu(hsl_med);
     free(hsl_med.h);
     free(hsl_med.s);
     free(hsl_med.l);
