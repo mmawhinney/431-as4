@@ -213,13 +213,6 @@ HSL_IMG rgb2hsl(PPM_IMG img_in)
         img_out.l[i] = (unsigned char)(L*255);
     }
     
-    // for(int i = 0; i < img_in.w * img_in.h; i++) {
-    //     printf("i = %d, img_out.h = %f, img_out.s = %f, img_out.l = %d\n", i, img_out.h[i], img_out.s[i], img_out.l[i]);
-    //     if(img_out.s[i] >= 1.0) {
-    //         printf("S too big in original...\n");
-    //     }
-    // }
-
     return img_out;
 }
 
