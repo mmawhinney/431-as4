@@ -22,13 +22,13 @@ int main(){
     PPM_IMG img_ibuf_c;
     
     printf("Running contrast enhancement for gray-scale images.\n");
-    img_ibuf_g = read_pgm("in.pgm");
+    img_ibuf_g = read_pgm("in2.pgm");
     run_cpu_gray_test(img_ibuf_g);
     run_gpu_gray_test(img_ibuf_g);
     free_pgm(img_ibuf_g);
     
     printf("Running contrast enhancement for color images.\n");
-    img_ibuf_c = read_ppm("in.ppm");
+    img_ibuf_c = read_ppm("in2.ppm");
     run_cpu_color_test(img_ibuf_c);
     run_gpu_color_test(img_ibuf_c);
     free_ppm(img_ibuf_c);
@@ -45,7 +45,6 @@ void run_gpu_color_test(PPM_IMG img_in)
 	
 	sdkCreateTimer(&timer);
 	sdkStartTimer(&timer);
-	// call hsl enhancement function
     img_hsl = contrast_enhancement_c_hsl_gpu(img_in);
 	sdkStopTimer(&timer);
 	printf("HSL processing time: %f (ms)\n", sdkGetTimerValue(&timer));

@@ -29,6 +29,7 @@ PGM_IMG contrast_enhancement_g_gpu(PGM_IMG img_in) {
     result.img = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
     
     create_histogram_gpu(hist, img_in.img, img_in.w * img_in.h, 256, result.img);
+
     return result;
 }
 
